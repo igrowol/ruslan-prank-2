@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PozorRuslan24-26</title>
+<link rel="stylesheet" href="style.css">
+<style>
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    min-height:100vh;
+  }
+  body{
+    background-image:url('assets/background.png');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    font-family:-apple-system, Segoe UI, Roboto, sans-serif;
+  }
+
+  /* ===== Book wrapper ===== */
+  .book-wrapper{
+    position:relative;
+    width:100%;
+    max-width:830px;
+    height:90vh;
+    margin:36px 20px;
+    overflow:visible;
+  }
+
+  .video-article{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    background:#e4e4e6;
+    border-radius:26px;
+    overflow-y:auto;
+    box-shadow:0 40px 100px rgba(0,0,0,.4);
+    scroll-behavior:smooth;
+    transform-origin:center center;
+    will-change:transform, opacity;
+  }
+
+  .page-1{ z-index:2; }
+  .page-2{ z-index:1; }
+  .video-article.is-hidden{ visibility:hidden; opacity:0; pointer-events:none; }
+
+  /* Departing page: crumples/folds up and shrinks, like paper being folded */
+  @keyframes pageFold{
+    0%   { transform:scale(1) rotate(0deg); opacity:1; border-radius:26px; }
+    35%  { transform:scale(.62) rotate(10deg) skew(6deg,3deg); opacity:.95; border-radius:20px; }
+    70%  { transform:scale(.18) rotate(28deg); opacity:.5; border-radius:10px; }
+    100% { transform:scale(.04) rotate(45deg); opacity:0; border-radius:6px; }
+  }
+  .video-article.folding{
+    animation:pageFold 7s cubic-bezier(.55,0,.85,.35) forwards;
+  }
+
+  /* Arriving page: unfolds back to full size, as if the bird landed and became paper again */
+  @keyframes pageArrive{
+    0%   { transform:scale(.04) rotate(-45deg); opacity:0; border-radius:6px; }
+    30%  { transform:scale(.2) rotate(-25deg); opacity:.4; border-radius:12px; }
+    65%  { transform:scale(.7) rotate(-6deg); opacity:.9; border-radius:20px; }
+    100% { transform:scale(1) rotate(0deg); opacity:1; border-radius:26px; }
+  }
+  .video-article.arriving{
+    animation:pageArrive 13s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+
+  /* ===== Paper bird that flies off between pages ===== */
+  .paper-bird{
+    position:fixed;
+    top:50%;
+    left:50%;
+    width:130px;
+    height:auto;
+    opacity:0;
+    pointer-events:none;
+    z-index:50;
+    filter:drop-shadow(0 14px 22px rgba(0,0,0,.4));
+  }
+  .paper-bird .wing{
+    transform-origin:100px 42px;
+    animation:flap .64s ease-in-out infinite;
+  }
+  .paper-bird .wing-l{ animation-delay:0s; }
+  .paper-bird .wing-r{ animation-delay:.02s; }
+  @keyframes flap{
+    0%,100%{ transform:scaleY(1) rotate(0deg); }
+    50%{ transform:scaleY(.55) rotate(4deg); }
+  }
+
+  @keyframes flyRight{
+    0%   { transform:translate(-50%,-50%) scale(.1) rotate(-6deg); opacity:0; }
+    14%  { transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:1; }
+    45%  { transform:translate(14vw,-14vh) scale(.85) rotate(10deg); opacity:1; }
+    100% { transform:translate(50vw,-46vh) scale(.3) rotate(30deg); opacity:0; }
+  }
+  @keyframes flyLeft{
+    0%   { transform:translate(-50%,-50%) scale(.1) rotate(6deg); opacity:0; }
+    14%  { transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:1; }
+    45%  { transform:translate(-14vw,-14vh) scale(.85) rotate(-10deg); opacity:1; }
+    100% { transform:translate(-50vw,-46vh) scale(.3) rotate(-30deg); opacity:0; }
+  }
+  .paper-bird.fly-right{ animation:flyRight 39s cubic-bezier(.3,.1,.5,1) forwards; }
+  .paper-bird.fly-left{ animation:flyLeft 39s cubic-bezier(.3,.1,.5,1) forwards; }
+
+  /* soft trailing sparkles behind the bird */
+  .bird-trail{
+    position:fixed;
+    top:50%;
+    left:50%;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,.9), rgba(255,255,255,0) 70%);
+    pointer-events:none;
+    z-index:49;
+    opacity:0;
+  }
+  @keyframes trailRight{
+    0%   { transform:translate(-50%,-50%) scale(.4); opacity:0; }
+    20%  { opacity:.9; }
+    100% { transform:translate(50vw,-46vh) scale(.1); opacity:0; }
+  }
+  @keyframes trailLeft{
+    0%   { transform:translate(-50%,-50%) scale(.4); opacity:0; }
+    20%  { opacity:.9; }
+    100% { transform:translate(-50vw,-46vh) scale(.1); opacity:0; }
+  }
+  .bird-trail.fly-right{ animation:trailRight 39s cubic-bezier(.3,.1,.5,1) forwards; }
+  .bird-trail.fly-left{ animation:trailLeft 39s cubic-bezier(.3,.1,.5,1) forwards; }
+
+  .video-article .header{
+    padding:36px 40px 20px;
+    border-bottom:1px solid #d0d0d3;
+    background:linear-gradient(180deg, #e9e9eb, #e4e4e6);
+    position:sticky;
+    top:0;
+    z-index:2;
+  }
+  .video-article h1{
+    margin:0 0 6px;
+    font-size:1.9rem;
+    color:#1c1f2b;
+    letter-spacing:-.02em;
+  }
+  .video-article .sub{
+    margin:0;
+    color:#75798a;
+    font-size:.95rem;
+    font-weight:600;
+  }
+
+  .section-title{
+    padding:0 40px;
+    margin:32px 0 4px;
+    font-size:1.1rem;
+    color:#1c1f2b;
+    font-weight:800;
+  }
+
+  .media-list{
+    padding:0 40px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:32px;
+  }
+
+  .media-item{
+    border-radius:18px;
+    overflow:hidden;
+    background:#111;
+    box-shadow:0 10px 30px rgba(0,0,0,.15);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .media-item:hover{
+    transform:translateY(-3px);
+    box-shadow:0 16px 40px rgba(0,0,0,.22);
+  }
+
+  .media-item video,
+  .media-item img{
+    width:100%;
+    display:block;
+    max-height:70vh;
+    object-fit:cover;
+  }
+
+  .media-item .caption{
+    padding:14px 18px;
+    background:#e6e6e6;
+    color:#0a0a0a;
+    font-size:.9rem;
+    font-weight:600;
+  }
+
+  .photo-grid{
+    padding:0 40px 50px;
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:16px;
+  }
+  .photo-grid .media-item{
+    margin:0;
+  }
+  @media (max-width:600px){
+    .photo-grid{grid-template-columns:1fr;}
+  }
+
+  /* ===== Blank page content ===== */
+  .blank-page-body{
+    padding:40px;
+    min-height:calc(100% - 100px);
+    color:#75798a;
+  }
+  .blank-page-body p{
+    font-size:.95rem;
+  }
+
+  .page2-layout{
+    display:flex;
+    gap:28px;
+    align-items:flex-start;
+  }
+
+  .quotes-col{
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    min-width:0;
+  }
+
+  .quote-card{
+    background:#eeeeef;
+    border-left:4px solid #1c1f2b;
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .quote-card .quote-text{
+    margin:0 0 10px;
+    font-size:.95rem;
+    color:#3a3d47;
+    line-height:1.5;
+    font-style:italic;
+  }
+  .quote-card .quote-source{
+    margin:0;
+    font-size:.8rem;
+    font-weight:700;
+    color:#9a9ca6;
+  }
+
+  .videos-col{
+    flex:0 0 260px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  .video-placeholder{
+    aspect-ratio:16/10;
+    border-radius:14px;
+    border:2px dashed #b6b8bf;
+    background:#dcdde0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    color:#8b8d96;
+  }
+  .video-placeholder svg{
+    width:34px;
+    height:34px;
+    opacity:.7;
+  }
+  .video-placeholder span{
+    font-size:.8rem;
+    font-weight:600;
+  }
+
+  @media (max-width:600px){
+    .page2-layout{
+      flex-direction:column;
+    }
+    .videos-col{
+      flex:1 1 auto;
+      width:100%;
+    }
+  }
+
+  /* ===== Flip controls ===== */
+  .flip-controls{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    align-items:center;
+    gap:14px;
+    z-index:10;
+  }
+  .flip-btn{
+    border:none;
+    background:#1c1f2b;
+    color:#fff;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    font-size:1.1rem;
+    cursor:pointer;
+    box-shadow:0 10px 24px rgba(0,0,0,.35);
+    transition:transform .15s ease, background .15s ease;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .flip-btn:hover{
+    background:#33374a;
+    transform:translateY(-2px);
+  }
+  .flip-indicator{
+    background:rgba(28,31,43,.85);
+    color:#fff;
+    font-size:.8rem;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:20px;
+  }
+
+  /* ===== Captcha overlay ===== */
+  #captchaOverlay{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    background:rgba(10,10,14,.92);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  #captchaOverlay.hidden{ display:none; }
+  .captcha-box{
+    background:#e4e4e6;
+    border-radius:20px;
+    padding:32px 28px;
+    max-width:380px;
+    width:100%;
+    box-shadow:0 30px 80px rgba(0,0,0,.5);
+    text-align:center;
+  }
+  .captcha-box h2{
+    margin:0 0 6px;
+    font-size:1.15rem;
+    color:#1c1f2b;
+  }
+  .captcha-box p.desc{
+    margin:0 0 8px;
+    font-size:.85rem;
+    color:#75798a;
+  }
+  .captcha-progress{
+    margin:0 0 14px;
+    font-size:.78rem;
+    font-weight:700;
+    color:#9a9ca6;
+    letter-spacing:.02em;
+  }
+  .captcha-question{
+    font-size:1.5rem;
+    font-weight:700;
+    color:#1c1f2b;
+    background:#fff;
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:16px;
+    letter-spacing:.02em;
+    word-break:break-word;
+  }
+  .captcha-question.hard{
+    font-size:1.25rem;
+  }
+  #captchaInput{
+    width:100%;
+    padding:12px 14px;
+    font-size:1rem;
+    border-radius:10px;
+    border:1px solid #c8c8cc;
+    margin-bottom:14px;
+    text-align:center;
+    box-sizing:border-box;
+  }
+  #captchaSubmit{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background:#1c1f2b;
+    color:#fff;
+    font-size:1rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  #captchaSubmit:hover{ background:#33374a; }
+  #captchaError{
+    color:#c0392b;
+    font-size:.85rem;
+    margin-top:10px;
+    min-height:18px;
+  }
+  .book-wrapper.content-locked{
+    filter:blur(6px);
+    pointer-events:none;
+    user-select:none;
+  }
+</style>
+</head>
+<body class="body-container">
+    <div class="img-container">
+        <img src="images/Furry-1.jpg" alt="">
+    </div>
+    <div class="img-container-2">
+        <img src="images/Furry-2.jpg" alt="">
+    </div>
+    <div class="img-container-3">
+        <img src="images/Furry-3.png" alt="">
+    </div>
+    <div class="img-container-4">
+        <img src="images/Furry-4.png" alt="">
+    </div>
+
+<!-- ===================== Captcha overlay ===================== -->
+<div id="captchaOverlay">
+  <div class="captcha-box">
+    <h2>Подтвердите, что вы не робот</h2>
+    <p class="desc">Решите пример, чтобы открыть страницу</p>
+    <p class="captcha-progress" id="captchaProgress"></p>
+    <div class="captcha-question" id="captchaQuestion"></div>
+    <input type="text" id="captchaInput" inputmode="decimal" autocomplete="off" placeholder="Ваш ответ">
+    <button id="captchaSubmit">Подтвердить</button>
+    <div id="captchaError"></div>
+  </div>
+</div>
+
+<div class="book-wrapper content-locked" id="bookWrapper">
+
+  <!-- ===================== PAGE 1: original content with video/photos ===================== -->
+  <div class="video-article page-1">
+    <div class="header">
+      <h1>Позоры руслана за 24-26 год</h1>
+      <p class="sub">На этом прекрасном сайте вы найдете пиздец который даже описать неполучится.А именно нашего дорогого друга Руслана Герасимова который учится в 8 школе мбоу сош в городе выборг ему 15 и он находится в красном холме(конечная для автобуса 11 в городе Выборг) а так же мы познакомися с его бедо семейкой: братом спинно-блевотронном матерью квопой и отцом который по документам израиль йегуда.</p>
+    </div>
+
+    <div class="section-title">Сборник пиздеца</div>
+    <div class="media-list">
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/5.mp4" type="video/mp4">
+        </video>
+        <div class="caption">Мамы больше нет</div>
+      </div>
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/6.mp4" type="video/mp4">
+        </video>
+        <div class="caption">Реп батл оксимирон/хованский</div>
+      </div>
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/11.mp4" type="video/mp4">
+        </video>
+        <div class="caption">Вы тоже это слышали?</div>
+      </div>
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/4.mp4" type="video/mp4">
+        </video>
+        <div class="caption">А я же говорил</div>
+      </div>
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/8.mp4" type="video/mp4">
+        </video>
+        <div class="caption">Анти-реклама себя</div>
+      </div>
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/9.mp4" type="video/mp4">
+        </video>
+        <div class="caption">Подскользнулся</div>
+      </div>
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/12.mp4" type="video/mp4">
+        </video>
+        <div class="caption">УК РФ Статья 242.1.</div>
+      </div>
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/2.mp4" type="video/mp4">
+        </video>
+        <div class="caption">Приуныл мальца</div>
+      </div>
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/3.mp4" type="video/mp4">
+        </video>
+        <div class="caption">А вот и батя обьявился</div>
+      </div>
+
+      <div class="media-item">
+        <video controls preload="metadata">
+          <source src="video/7.mp4" type="video/mp4">
+        </video>
+        <div class="caption">Майский жук</div>
+      </div>
+
+    </div>
+
+    <div class="section-title">ящик пандоры(фотографии)</div>
+    <div class="photo-grid">
+
+      <div class="media-item">
+        <img src="images/1.png" alt="Фото 1">
+        <div class="caption">Ну тут я даже комментировать не буду</div>
+      </div>
+
+      <div class="media-item">
+        <img src="images/2.jpg" alt="Фото 2">
+        <div class="caption">Самый лютый долбаеб на диком западе</div>
+      </div>
+
+      <div class="media-item">
+        <img src="images/3.jpg" alt="Фото 3">
+        <div class="caption">Спи спокойно</div>
+      </div>
+
+      <div class="media-item">
+        <img src="images/5.jpg" alt="Фото 4">
+        <div class="caption">руслан до макдоналдса</div>
+      </div>
+
+      <div class="media-item">
+        <img src="images/6.jpg" alt="Фото 5">
+        <div class="caption">руслан после макдоналдса</div>
+      </div>
+
+      <div class="media-item">
+        <img src="images/7.png" alt="Фото 6">
+        <div class="caption">Его тотемное животное</div>
+      </div>
+
+      <div class="media-item">
+        <img src="images/8.jpg" alt="Фото 7">
+        <div class="caption">Наебни говна олух</div>
+      </div>
+
+      <div class="media-item">
+        <img src="images/4.png" alt="Фото 8">
+        <div class="caption">Будем помнить.И скорбить</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== PAGE 2: identical style, no video/photo content ===================== -->
+  <div class="video-article page-2">
+    <div class="header">
+      <h1>Цитаты мутанты</h1>
+      <p class="sub"></p>
+    </div>
+
+    <div class="blank-page-body">
+      <div class="page2-layout">
+        <div class="quotes-col">
+          <div class="quote-card">
+            <p class="quote-text">Я 💘 здесь 🔁 глажу 😰 свой член 🍆 Я 👁 намазал 🉐 лосьоном 🧴 🔛 свой член ‼🍆💦 прямо ✔ сейчас я 👌🏻😂👌 просто глажу 🖌 свое дерьмо 💩🌍 Я 😼👌💥 возбужден 😉 как черт 👉 мужик 👴👨 Я 💘 урод 😂😜😝 мужик 👨🏻‍🍳 как 👍 эта ✅ штука толстый мужик 💣🍆 она меня 🚨🚔 мой кончик кремовый 💧 прямо сейчас. Мой кончик 🗻 мой кончик липкий 🤪 кончик очень липкий и влажный 💧 Я играю с ним 🎲🎮 немного, щелкая им. ✈🤏Щелкаю кончиком немного. 🌋 У меня на пальцах сперма 💧🖐 и дерьмо 💩</p>
+            <p class="quote-source">— Где то / Руслан блевотронов</p>
+          </div>
+          <div class="quote-card">
+            <p class="quote-text">пошли в мак</p>
+            <p class="quote-source">— школа / Руслан ублюдов</p>
+          </div>
+          <div class="quote-card">
+            <p class="quote-text">Так я на крыше бегаю</p>
+            <p class="quote-source">— мясокобинат / Руслан коЧенный</p>
+          </div>
+          <div class="quote-card">
+            <p class="quote-text">Понятно,Понятно</p>
+            <p class="quote-source">— Понятно / Понятно</p>
+          </div>
+        </div>
+
+        <div class="video-col">
+          <div class="media-item video-slot">
+            <video controls preload="metadata">
+              <!-- вставь сюда путь к видео 1, например: videos/имя-файла.mp4 -->
+              <source src="video/1.mp4" type="video/mp4">
+            </video>
+            <div class="caption">Семья Бейкеров</div>
+          </div>
+          <div class="media-item video-slot">
+            <video controls preload="metadata">
+              <!-- вставь сюда путь к видео 2, например: videos/имя-файла.mp4 -->
+              <source src="video/10.mp4" type="video/mp4">
+            </video>
+            <div class="caption">scp пятко</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== Paper bird (origami-style, flies off on page turn) ===================== -->
+<div class="bird-trail" id="birdTrail"></div>
+<svg id="paperBird" class="paper-bird" viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="paperLight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dcdde0"/>
+    </linearGradient>
+    <linearGradient id="paperMid" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f1f1f3"/>
+      <stop offset="100%" stop-color="#c9cad0"/>
+    </linearGradient>
+    <linearGradient id="paperShadow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#dcdde0"/>
+      <stop offset="100%" stop-color="#b6b8bf"/>
+    </linearGradient>
+  </defs>
+
+  <!-- tail -->
+  <polygon points="98,74 84,116 108,110" fill="url(#paperShadow)" stroke="#b3b4ba" stroke-width="1"/>
+
+  <!-- wings -->
+  <g class="wing wing-l">
+    <polygon points="98,44 10,10 52,80 98,60" fill="url(#paperMid)" stroke="#b8b9bf" stroke-width="1.2" stroke-linejoin="round"/>
+  </g>
+  <g class="wing wing-r">
+    <polygon points="98,44 190,14 146,82 98,60" fill="url(#paperLight)" stroke="#b8b9bf" stroke-width="1.2" stroke-linejoin="round"/>
+  </g>
+
+  <!-- body / head fold -->
+  <polygon points="98,6 60,88 98,68" fill="url(#paperLight)" stroke="#b8b9bf" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="98,6 98,68 134,88" fill="url(#paperMid)" stroke="#b8b9bf" stroke-width="1.2" stroke-linejoin="round"/>
+
+  <!-- beak -->
+  <polygon points="98,4 112,-4 118,8 104,12" fill="url(#paperShadow)"/>
+</svg>
+
+<!-- ===================== Flip controls ===================== -->
+<div class="flip-controls">
+  <button class="flip-btn" id="prevBtn" title="Предыдущая страница">&#10094;</button>
+  <div class="flip-indicator" id="pageIndicator">1 / 2</div>
+  <button class="flip-btn" id="nextBtn" title="Следующая страница">&#10095;</button>
+</div>
+
+<script>
+  const page1 = document.querySelector('.page-1');
+  const page2 = document.querySelector('.page-2');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const pageIndicator = document.getElementById('pageIndicator');
+  const bird = document.getElementById('paperBird');
+  const trail = document.getElementById('birdTrail');
+
+  // page2 starts hidden; page1 starts visible
+  page2.classList.add('is-hidden');
+
+  let current = 1;
+  let animating = false;
+
+  function updateIndicator(){
+    pageIndicator.textContent = current === 1 ? '1 / 2' : '2 / 2';
+  }
+
+  function turnTo(target){
+    if(animating || current === target) return;
+    animating = true;
+
+    const leaving = current === 1 ? page1 : page2;
+    const arriving = target === 1 ? page1 : page2;
+    const direction = target === 2 ? 'fly-right' : 'fly-left';
+
+    // 1. the current page folds up into nothing
+    leaving.classList.add('folding');
+
+    // 2. a paper bird appears mid-fold and flies away, trailing a soft spark
+    bird.classList.remove('fly-right', 'fly-left');
+    trail.classList.remove('fly-right', 'fly-left');
+    void bird.offsetWidth; // force reflow so the animation can restart
+    setTimeout(() => {
+      bird.classList.add(direction);
+      trail.classList.add(direction);
+    }, 500);
+
+    // 3. once folded away, reveal the next page and let it unfold back in
+    setTimeout(() => {
+      leaving.classList.remove('folding');
+      leaving.classList.add('is-hidden');
+
+      arriving.classList.remove('is-hidden');
+      arriving.classList.add('arriving');
+
+      current = target;
+      updateIndicator();
+    }, 7000);
+
+    // 4. cleanup once everything has settled — arriving page keeps its
+    //    normal (non-hidden) style, so it stays fully visible afterwards
+    setTimeout(() => {
+      arriving.classList.remove('arriving');
+      bird.classList.remove('fly-right', 'fly-left');
+      trail.classList.remove('fly-right', 'fly-left');
+      animating = false;
+    }, 40000);
+  }
+
+  nextBtn.addEventListener('click', () => turnTo(2));
+  prevBtn.addEventListener('click', () => turnTo(1));
+
+  updateIndicator();
+</script>
+
+<!-- ===================== Captcha logic ===================== -->
+<script>
+(function(){
+  const overlay = document.getElementById('captchaOverlay');
+  const questionEl = document.getElementById('captchaQuestion');
+  const progressEl = document.getElementById('captchaProgress');
+  const inputEl = document.getElementById('captchaInput');
+  const submitBtn = document.getElementById('captchaSubmit');
+  const errorEl = document.getElementById('captchaError');
+  const wrapper = document.getElementById('bookWrapper');
+
+  const TOTAL = 100;        // всего примеров нужно решить подряд за один заход
+  const HARD_INDEX = 98;    // 0-based индекс -> это 99-й пример по счёту
+  const BYPASS_CODE = '7562934856'; // ввод этого кода сразу открывает доступ
+
+  function randInt(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  // Лёгкий пример: сложение / вычитание / умножение небольших чисел
+  function generateEasy(){
+    const ops = ['+', '-', '*'];
+    const op = ops[randInt(0, ops.length - 1)];
+    let a, b, answer, text;
+
+    if(op === '+'){
+      a = randInt(2, 30); b = randInt(2, 30);
+      answer = a + b;
+      text = `${a} + ${b} = ?`;
+    } else if(op === '-'){
+      a = randInt(10, 40); b = randInt(1, a);
+      answer = a - b;
+      text = `${a} − ${b} = ?`;
+    } else {
+      a = randInt(2, 12); b = randInt(2, 12);
+      answer = a * b;
+      text = `${a} × ${b} = ?`;
+    }
+    return { text, answer };
+  }
+
+  // Сложный пример: квадратный корень + дробь + вычитание,
+  // подобрано так, чтобы ответ всегда был целым числом
+  function generateHard(){
+    const a = randInt(3, 20);          // основание корня
+    const square = a * a;              // подкоренное число
+    const multiplier = randInt(2, 9);  // во сколько раз числитель больше знаменателя
+    const denom = randInt(2, 9);
+    const numer = denom * multiplier;  // дробь всегда делится нацело
+    const d = randInt(1, 15);
+
+    const answer = a + multiplier - d;
+    const text = `√${square} + ${numer}/${denom} − ${d} = ?`;
+    return { text, answer };
+  }
+
+  // Строим пул из 100 примеров: все лёгкие, кроме позиции HARD_INDEX (99-й по счёту)
+  function buildPool(){
+    const pool = [];
+    for(let i = 0; i < TOTAL; i++){
+      pool.push(i === HARD_INDEX ? generateHard() : generateEasy());
+    }
+    return pool;
+  }
+
+  let pool = buildPool();
+  let position = 0; // текущий пример в рамках одного захода (сбрасывается при ошибке)
+
+  function showProblem(){
+    const problem = pool[position];
+    const isHard = position === HARD_INDEX;
+    questionEl.textContent = problem.text;
+    questionEl.classList.toggle('hard', isHard);
+    progressEl.textContent = `Пример ${position + 1} из ${TOTAL}`;
+    inputEl.value = '';
+    inputEl.focus();
+  }
+
+  function resetAll(message){
+    pool = buildPool();
+    position = 0;
+    errorEl.textContent = message || '';
+    showProblem();
+  }
+
+  showProblem();
+
+  function checkAnswer(){
+    const raw = inputEl.value.trim().replace(',', '.');
+
+    // секретный код обхода — открывает доступ сразу, без решения примеров
+    if(inputEl.value.trim() === BYPASS_CODE){
+      errorEl.textContent = '';
+      overlay.classList.add('hidden');
+      wrapper.classList.remove('content-locked');
+      return;
+    }
+
+    const problem = pool[position];
+    const userAnswer = parseFloat(raw);
+
+    if(raw === '' || isNaN(userAnswer)){
+      errorEl.textContent = 'Введите число';
+      return;
+    }
+
+    if(userAnswer === problem.answer){
+      errorEl.textContent = '';
+      position += 1;
+
+      if(position >= TOTAL){
+        // все 100 примеров решены подряд без единой ошибки — открываем доступ
+        overlay.classList.add('hidden');
+        wrapper.classList.remove('content-locked');
+      } else {
+        showProblem();
+      }
+    } else {
+      // ошибка — весь прогресс сбрасывается, начинаем с примера №1
+      resetAll('Неверный ответ! Прогресс сброшен, начинаем с примера 1 из 100');
+    }
+  }
+
+  submitBtn.addEventListener('click', checkAnswer);
+  inputEl.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') checkAnswer();
+  });
+
+  inputEl.focus();
+})();
+</script>
+
+</body>
+</html>

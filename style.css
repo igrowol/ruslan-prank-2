@@ -1,0 +1,65 @@
+body{
+    background-color: #BEBCC1;
+}
+body {
+    overflow: hidden;
+}
+
+/* Or for more control */
+html, body {
+    overflow: hidden;
+    height: 100%;
+}
+ .img-container img {
+  position: absolute;
+  top: 77%;
+  left: 9.8%;
+  transform: translate(-50%, -50%);
+
+  height: 500px;
+  width: 400px;
+}
+
+.img-container-2 img {
+    height: 500px;
+    width: 500px;
+
+    position: absolute;
+    top: 20%;
+    left: 9.8%;
+    transform: translate(-50%, -50%);
+}
+.img-container-3 img{
+    height: 600px;
+    width: 350px;
+    position: absolute;
+    left: 84%;
+    top: 45%;
+}
+.img-container-4 img{
+    height: 500px;
+    width: 500px;
+    position: absolute;
+    left: 92%;
+    top: 15%;
+    transform: translate(-50%, -50%);
+}
+
+.article-box{
+  max-width: 720px;
+  height: 80vh;              /* фиксированная высота */
+  margin: 40px auto;         /* центрирование по горизонтали */
+  border-radius: 20px;
+  overflow-y: auto;          /* скролл только внутри блока */
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(0,0,0,.15);
+}
+.article-box video{
+  width: 100%;
+  display: block;
+  position: sticky;   /* видео "прилипает" сверху при скролле контента */
+  top: 0;
+}
+.article-box .content{
+  padding: 24px 28px;
+}
